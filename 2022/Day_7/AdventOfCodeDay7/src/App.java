@@ -3,10 +3,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.Stack;
 
 public class App {
     public static void main(String[] args) throws Exception {
@@ -38,25 +35,73 @@ $ ls
         
         BufferedReader br = new BufferedReader(new FileReader("lib/day7.txt"));
 
-        List<String> commands = new ArrayList<>();
-        Stack<String> paths = new Stack<>();
-        HashMap<String,Integer> dir_size = new HashMap<>();
-        HashMap<String,List<String>> children = new HashMap<>();
-        // String line;
-        // while ((line = br.readLine()) != null) {
-        for (String line : testdata.split("\n")) {
-            if(line.charAt(0) != '$'){
-                commands.add(line);
-            }else{
-                commands.add(line.substring(2));
+        List<String> blocks = new ArrayList<>();
+        DirectoryEntry rootDirectory = new DirectoryEntry(null,"/");
+        DirectoryEntry currentDirectory = rootDirectory;
+        List<DirectoryEntry> allDirectories = new ArrayList<>();
+
+        String fileInput = "";
+        String lines;
+        int lineCounter = 0;
+        while ((lines = br.readLine()) != null) {
+            if (lineCounter == 0) {
+                fileInput = lines;
+                lineCounter++;
+            } else {
+                fileInput = fileInput + "\n" + lines;
             }
         }
 
-        System.out.println(commands.toString());
+        // System.out.println(fileInput);
+        blocks = Arrays.asList(fileInput.split("\n"));
+        // System.out.println(blocks.toString());
 
-        // String[] commandsAndOp = fileInput.split("\n");
-        for(String command : commands){
-            
+        for(String line : blocks){
+            String[] linearr = line.split(" ");
+            if ("$".equals(linearr[0])) {
+                if ("cd".equals(linearr[1])) {
+                    if ("/".equals(linearr[2])) {
+                        currentDirectory = rootDirectory;
+                    } else if ("..".equals(linearr[2])) {
+                        currentDirectory = currentDirectory.getParent();
+                    } else {
+                        currentDirectory = currentDirectory.getDir(linearr[2]);
+                    }
+                }
+            } else if ("dir".equals(linearr[0])) {
+                DirectoryEntry de = new DirectoryEntry(currentDirectory, linearr[1]);
+                currentDirectory.addFile(de);
+                allDirectories.add(de);
+            } else {
+                currentDirectory.addFile(new FileEntry(linearr[1], Long.parseLong(linearr[0])));
+            }
         }
+
+        long ansp1 = 0;
+        for (DirectoryEntry de : allDirectories) {
+            if (de.size() <= 100000) {
+                ansp1 += de.size();
+            }
+        }
+        System.out.println(ansp1);
+
+        long sizeOfRoot = rootDirectory.size();
+        long spaceLeft = 70000000 - sizeOfRoot;
+        long spaceToRemove = 30000000 - spaceLeft;
+
+        List<DirectoryEntry> candidates = new ArrayList<>();
+
+        long count = 0;
+        for (DirectoryEntry de : allDirectories) {
+            if (de.size() > spaceToRemove) {
+                candidates.add(de);
+            }
+        }
+
+        candidates.add(rootDirectory);
+
+        candidates.sort((a, b) -> (int)(a.size() - b.size()));
+
+        System.out.println(candidates.get(0).size());
     }
 }
